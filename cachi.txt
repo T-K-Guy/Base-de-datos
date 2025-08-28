@@ -1,6 +1,4 @@
-CREATE DATABASE cachi;
-USE cachi;
-
+/*
 -- ================================
 -- Tabla Producto
 -- ================================
@@ -74,7 +72,7 @@ CREATE TABLE Precio_Publico (
 
 
 -------------------------------------------------------------
-INGRESAMOS LOS VALORES
+-- INGRESAMOS LOS VALORES
 -------------------------------------------------------------
 
 -- =======================================
@@ -165,7 +163,7 @@ INSERT INTO Cliente (RFC, Nombre, Fisi_Mor, Direccion, Telefono) VALUES
 
 
 INSERT INTO Inventario (Id_producto, Id_proveedor, Cantidad, Costo)
-SELECT p.ID, pr.ID, FLOOR(50 + RAND()*100), ROUND(10 + RAND()*90,2)
+SELECT p.ID, pr.ID, FLOOR(50 + RANDOM()*100), ROUND(10 + RANDOM()*90,2)
 FROM Producto p
 JOIN Proveedor pr ON pr.ID <= 20
 WHERE p.ID <= 20
@@ -178,7 +176,7 @@ LIMIT 20;
 -- =======================================
 
 INSERT INTO Venta (Id_cliente, Id_prod, Cantidad, Fecha, Hora)
-SELECT c.RFC, p.ID, FLOOR(1 + RAND()*5), '2025-08-27', '12:30'
+SELECT c.RFC, p.ID, FLOOR(1 + RANDOM()*5), '2025-08-27', '12:30'
 FROM Cliente c
 JOIN Producto p ON p.ID <= 20
 LIMIT 20;
@@ -193,4 +191,53 @@ INSERT INTO Precio_Publico (Id_prod, Stock, Precio_publico)
 SELECT i.Id_producto, i.Cantidad, ROUND(i.Costo * 1.15,2)
 FROM Inventario i
 LIMIT 20;
+*/
 
+/*
+SELECT * FROM Cliente;
+SELECT * FROM Inventario;
+SELECT * FROM Precio_Publico;
+SELECT * FROM Producto;
+SELECT * FROM Proveedor;
+SELECT * FROM Venta;
+*/
+
+/*
+-- PRODUCTO MAS BARATO
+SELECT MIN(costo) AS precio_minimo
+FROM Inventario;
+
+-- PROVEDOR DEL PRODUCTO MAS BARATO
+SELECT i.Id_proveedor
+FROM Inventario as i
+WHERE i.costo = (
+	SELECT MIN(i2.costo)
+	FROM Inventario as i2;
+);
+
+*/
+-- CLIENTE QUE MENOS COMPRA
+SELECT v.Id_cliente
+FROM Venta as v
+WHERE MIN(count(v.Id_cliente));
+/*
+-- PRODUCTO CON MAS DE UN PROVEEDOR
+SELECT MIN(costo) AS precio_minimo
+FROM Inventario;
+
+-- PRODUCTOS SUMINISTRADOS POR EL PROVEDOR 3
+SELECT MIN(costo) AS precio_minimo
+FROM Inventario
+
+-- FECHA QUE MAS SE VENDIO
+SELECT MIN(costo) AS precio_minimo
+FROM Inventario
+
+-- FECHA QUE MENOS SE VENDIO
+SELECT MIN(costo) AS precio_minimo
+FROM Inventario
+
+-- PRODUCTOS VENDIDOS EL DIA QUE MENOS SE VENDIO
+SELECT MIN(costo) AS precio_minimo
+FROM Inventario
+*/
