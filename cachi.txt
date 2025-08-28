@@ -1,0 +1,196 @@
+CREATE DATABASE cachi;
+USE cachi;
+
+-- ================================
+-- Tabla Producto
+-- ================================
+CREATE TABLE Producto (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Clave VARCHAR(5) UNIQUE NOT NULL,
+    Nombre VARCHAR(10) NOT NULL,
+    Descripcion VARCHAR(25) NOT NULL
+);
+
+-- ================================
+-- Tabla Proveedor
+-- ================================
+CREATE TABLE Proveedor (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Clave VARCHAR(3) UNIQUE NOT NULL,
+    Nombre VARCHAR(10) NOT NULL,
+    Fisi_Mor CHAR(1) NOT NULL,
+    Direccion VARCHAR(30) NOT NULL,
+    Telefono CHAR(10) NOT NULL,
+    RFC VARCHAR(18) NOT NULL
+);
+
+-- ================================
+-- Tabla Cliente
+-- ================================
+CREATE TABLE Cliente (
+    RFC VARCHAR(18) PRIMARY KEY,
+    Nombre VARCHAR(10) NOT NULL,
+    Fisi_Mor CHAR(1) NOT NULL,
+    Direccion VARCHAR(25) NOT NULL,
+    Telefono CHAR(10) NOT NULL
+);
+
+-- ================================
+-- Tabla Inventario
+-- ================================
+CREATE TABLE Inventario (
+    Id_producto INT NOT NULL,
+    Id_proveedor INT NOT NULL,
+    Cantidad INT NOT NULL,
+    Costo DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (Id_producto, Id_proveedor),
+    FOREIGN KEY (Id_producto) REFERENCES Producto(ID),
+    FOREIGN KEY (Id_proveedor) REFERENCES Proveedor(ID)
+);
+
+-- ================================
+-- Tabla Venta
+-- ================================
+CREATE TABLE Venta (
+    Id_cliente VARCHAR(18) NOT NULL,
+    Id_prod INT NOT NULL,
+    Cantidad INT NOT NULL,
+    Fecha CHAR(10) NOT NULL,
+    Hora CHAR(5) NOT NULL,
+    PRIMARY KEY (Id_cliente, Id_prod),
+    FOREIGN KEY (Id_cliente) REFERENCES Cliente(RFC),
+    FOREIGN KEY (Id_prod) REFERENCES Producto(ID)
+);
+
+-- ================================
+-- Tabla Precio_Publico
+-- ================================
+CREATE TABLE Precio_Publico (
+    Id_prod INT PRIMARY KEY,
+    Stock INT NOT NULL,
+    Precio_publico DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (Id_prod) REFERENCES Producto(ID)
+);
+
+
+-------------------------------------------------------------
+INGRESAMOS LOS VALORES
+-------------------------------------------------------------
+
+-- =======================================
+-- Tabla Producto
+-- =======================================
+
+INSERT INTO Producto (Clave, Nombre, Descripcion) VALUES
+('P001','Pan','Pan integral chico'),
+('P002','Leche','Leche deslactosada'),
+('P003','Arroz','Arroz blanco 1kg'),
+('P004','Frijol','Frijol negro 1kg'),
+('P005','Azuc','Azucar morena'),
+('P006','Sal','Sal refinada'),
+('P007','Aceit','Aceite vegetal'),
+('P008','Manteq','Mantequilla 250g'),
+('P009','Cafe','Cafe soluble 200g'),
+('P010','Choco','Chocolate polvo 500g'),
+('P011','Tuna','Atun en lata 140g'),
+('P012','Gallet','Galletas surtidas'),
+('P013','Harina','Harina trigo 1kg'),
+('P014','Jugo','Jugo naranja 1L'),
+('P015','Refre','Refresco 2L'),
+('P016','Agua','Agua 1.5L'),
+('P017','Cereal','Cereal chocolate'),
+('P018','Queso','Queso fresco 250g'),
+('P019','Jamon','Jamon pavo 200g'),
+('P020','Huevo','Huevo docena');
+
+
+-- =======================================
+-- Tabla Provedor
+-- =======================================
+
+INSERT INTO Proveedor (Clave, Nombre, Fisi_Mor, Direccion, Telefono, RFC) VALUES
+('A01','LALA','M','Calle Norte 123','5551112223','LAL010101AAA'),
+('A02','Bimbo','M','Calle Sur 45','5552223334','BIM020202BBB'),
+('A03','Nestle','M','Av Central 78','5553334445','NES030303CCC'),
+('A04','Coca','M','Av Reforma 12','5554445556','COC040404DDD'),
+('A05','Pepsi','M','Calle Juarez 89','5555556667','PEP050505EEE'),
+('A06','Gamesa','M','Calle Norte 67','5556667778','GAM060606FFF'),
+('A07','Herdez','M','Av Sur 23','5557778889','HER070707GGG'),
+('A08','Alpura','M','Calle Poniente 98','5558889990','ALP080808HHH'),
+('A09','LaCost','M','Av Hidalgo 10','5559990001','LAC090909III'),
+('A10','Sigma','M','Calle Oriente 65','5550001112','SIG101010JJJ'),
+('A11','Sabri','M','Av Morelos 55','5551112224','SAB111111KKK'),
+('A12','Danon','M','Calle Norte 34','5552223335','DAN121212LLL'),
+('A13','Kraft','M','Av Sur 43','5553334446','KRA131313MMM'),
+('A14','Masec','M','Calle Hidalgo 21','5554445557','MAS141414NNN'),
+('A15','Colga','M','Calle Juarez 100','5555556668','COL151515OOO'),
+('A16','Unile','M','Av Reforma 99','5556667779','UNI161616PPP'),
+('A17','Lysol','M','Calle Norte 88','5557778880','LYS171717QQQ'),
+('A18','Clorox','M','Av Sur 32','5558889991','CLO181818RRR'),
+('A19','Baril','M','Calle Poniente 44','5559990002','BAR191919SSS'),
+('A20','Fud','M','Av Hidalgo 66','5550001113','FUD202020TTT');
+
+
+-- =======================================
+-- Tabla Cliente
+-- =======================================
+
+
+INSERT INTO Cliente (RFC, Nombre, Fisi_Mor, Direccion, Telefono) VALUES
+('CLI010101AAA','Juan','F','Calle Roble 23','5511112233'),
+('CLI020202BBB','Maria','F','Av Cedros 12','5522223344'),
+('CLI030303CCC','Pedro','F','Calle Pino 78','5533334455'),
+('CLI040404DDD','Ana','M','Av Nogal 56','5544445566'),
+('CLI050505EEE','Jose','F','Calle Abeto 34','5555556677'),
+('CLI060606FFF','Laura','F','Av Encino 90','5566667788'),
+('CLI070707GGG','Miguel','M','Calle Olmo 45','5577778899'),
+('CLI080808HHH','Lucia','F','Av Abedul 67','5588889900'),
+('CLI090909III','David','M','Calle Sauces 33','5599990011'),
+('CLI101010JJJ','Marta','F','Av Pinos 21','5500001122'),
+('CLI111111KKK','Carlos','F','Calle Rosas 89','5511113344'),
+('CLI121212LLL','Rosa','M','Av Lirios 12','5522224455'),
+('CLI131313MMM','Luis','M','Calle Palmas 32','5533335566'),
+('CLI141414NNN','Elena','F','Av Jazmin 76','5544446677'),
+('CLI151515OOO','Pablo','F','Calle Cedros 22','5555557788'),
+('CLI161616PPP','Carmen','M','Av Clavel 98','5566668899'),
+('CLI171717QQQ','Raul','M','Calle Naranjos 67','5577779900'),
+('CLI181818RRR','Isabel','F','Av Orquidea 43','5588880011'),
+('CLI191919SSS','Andres','F','Calle Margaritas 54','5599991122'),
+('CLI202020TTT','Sofia','M','Av Dalias 65','5500002233');
+
+
+-- =======================================
+-- Tabla Inventario
+-- =======================================
+
+
+INSERT INTO Inventario (Id_producto, Id_proveedor, Cantidad, Costo)
+SELECT p.ID, pr.ID, FLOOR(50 + RAND()*100), ROUND(10 + RAND()*90,2)
+FROM Producto p
+JOIN Proveedor pr ON pr.ID <= 20
+WHERE p.ID <= 20
+LIMIT 20;
+
+
+
+-- =======================================
+-- Tabla Venta
+-- =======================================
+
+INSERT INTO Venta (Id_cliente, Id_prod, Cantidad, Fecha, Hora)
+SELECT c.RFC, p.ID, FLOOR(1 + RAND()*5), '2025-08-27', '12:30'
+FROM Cliente c
+JOIN Producto p ON p.ID <= 20
+LIMIT 20;
+
+
+-- =======================================
+-- Tabla Precio publico
+-- =======================================
+
+
+INSERT INTO Precio_Publico (Id_prod, Stock, Precio_publico)
+SELECT i.Id_producto, i.Cantidad, ROUND(i.Costo * 1.15,2)
+FROM Inventario i
+LIMIT 20;
+
