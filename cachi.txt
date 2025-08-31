@@ -1,44 +1,53 @@
 /*
--- ================================
+-- Crear la base de datos
+CREATE DATABASE Cachi;
+USE Cachi;
+
 -- Tabla Producto
--- ================================
 CREATE TABLE Producto (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     Clave VARCHAR(5) UNIQUE NOT NULL,
-    Nombre VARCHAR(10) NOT NULL,
-    Descripcion VARCHAR(25) NOT NULL
+    Nombre VARCHAR(20) NOT NULL,
+    Descripcion VARCHAR(50) NOT NULL,
+    Categoria VARCHAR(20) NOT NULL
 );
 
--- ================================
 -- Tabla Proveedor
--- ================================
 CREATE TABLE Proveedor (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     Clave VARCHAR(3) UNIQUE NOT NULL,
-    Nombre VARCHAR(10) NOT NULL,
+    Nombre VARCHAR(20) NOT NULL,
     Fisi_Mor CHAR(1) NOT NULL,
-    Direccion VARCHAR(30) NOT NULL,
+    Pais VARCHAR(30) NOT NULL,
+    Estado VARCHAR(30) NOT NULL,
+    Ciudad VARCHAR(25) NOT NULL,
+    Calle VARCHAR(25) NOT NULL,
+    Colonia VARCHAR(30) NOT NULL,
+    Codigo_Postal CHAR(5) NOT NULL,
     Telefono CHAR(10) NOT NULL,
     RFC VARCHAR(18) NOT NULL
 );
 
--- ================================
 -- Tabla Cliente
--- ================================
 CREATE TABLE Cliente (
     RFC VARCHAR(18) PRIMARY KEY,
-    Nombre VARCHAR(10) NOT NULL,
+    Nombres VARCHAR(25) NOT NULL,
+    Apellido_paterno VARCHAR(15) NOT NULL,
+    Apellido_materno VARCHAR(15) NOT NULL,
     Fisi_Mor CHAR(1) NOT NULL,
-    Direccion VARCHAR(25) NOT NULL,
+    Pais VARCHAR(30) NOT NULL,
+    Estado VARCHAR(30) NOT NULL,
+    Ciudad VARCHAR(25) NOT NULL,
+    Calle VARCHAR(25) NOT NULL,
+    Colonia VARCHAR(30) NOT NULL,
+    Codigo_Postal CHAR(5) NOT NULL,
     Telefono CHAR(10) NOT NULL
 );
 
--- ================================
 -- Tabla Inventario
--- ================================
 CREATE TABLE Inventario (
-    Id_producto INT NOT NULL,
-    Id_proveedor INT NOT NULL,
+    Id_producto INT,
+    Id_proveedor INT,
     Cantidad INT NOT NULL,
     Costo DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (Id_producto, Id_proveedor),
@@ -46,198 +55,571 @@ CREATE TABLE Inventario (
     FOREIGN KEY (Id_proveedor) REFERENCES Proveedor(ID)
 );
 
--- ================================
--- Tabla Venta
--- ================================
+-- Tabla Venta (cabecera)
 CREATE TABLE Venta (
-    Id_cliente VARCHAR(18) NOT NULL,
-    Id_prod INT NOT NULL,
-    Cantidad INT NOT NULL,
-    Fecha CHAR(10) NOT NULL,
-    Hora CHAR(5) NOT NULL,
-    PRIMARY KEY (Id_cliente, Id_prod),
-    FOREIGN KEY (Id_cliente) REFERENCES Cliente(RFC),
-    FOREIGN KEY (Id_prod) REFERENCES Producto(ID)
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Id_cliente VARCHAR(18),
+    Fecha DATE NOT NULL,
+    Hora TIME NOT NULL,
+    Total DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (Id_cliente) REFERENCES Cliente(RFC)
 );
 
--- ================================
--- Tabla Precio_Publico
--- ================================
-CREATE TABLE Precio_Publico (
+-- Tabla Detalle_Venta (detalle de productos en cada venta)
+CREATE TABLE Detalle_Venta (
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    Id_venta INT,
+    Id_producto INT,
+    Cantidad INT NOT NULL,
+    Precio_unitario DECIMAL(10,2) NOT NULL,
+    Subtotal DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (Id_venta) REFERENCES Venta(ID),
+    FOREIGN KEY (Id_producto) REFERENCES Producto(ID)
+);
+
+-- Tabla Precio_publico
+CREATE TABLE Precio_publico (
     Id_prod INT PRIMARY KEY,
     Stock INT NOT NULL,
     Precio_publico DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (Id_prod) REFERENCES Producto(ID)
 );
 
+-- Trigger para actualizar el stock después de una venta
+DELIMITER //
+CREATE TRIGGER after_detalle_venta_insert
+AFTER INSERT ON Detalle_Venta
+FOR EACH ROW
+BEGIN
+    -- Actualizar el stock en Precio_publico
+    UPDATE Precio_publico 
+    SET Stock = Stock - NEW.Cantidad 
+    WHERE Id_prod = NEW.Id_producto;
+    
+    -- Actualizar el stock en Inventario (si existe relación directa)
+    UPDATE Inventario i
+    SET i.Cantidad = i.Cantidad - NEW.Cantidad
+    WHERE i.Id_producto = NEW.Id_producto;
+END;//
+DELIMITER ;
 
--------------------------------------------------------------
--- INGRESAMOS LOS VALORES
--------------------------------------------------------------
+-- Inserciones para la tabla Producto (75 productos)
+INSERT INTO Producto (Clave, Nombre, Descripcion, Categoria) VALUES
+('P0001', 'LECHE', 'Leche entera Alpura 1L', 'Lácteos'),
+('P0002', 'PAN BIM', 'Pan blanco Bimbo 680g', 'Panadería'),
+('P0003', 'ARROZ', 'Arroz SOS 1kg', 'Abarrotes'),
+('P0004', 'ACEITE', 'Aceite vegetal 1L', 'Abarrotes'),
+('P0005', 'ATUN', 'Atún en agua 140g', 'Enlatados'),
+('P0006', 'JABON', 'Jabón Zote 650g', 'Limpieza'),
+('P0007', 'DETERGE', 'Detergente Ariel 1kg', 'Limpieza'),
+('P0008', 'PAPEL', 'Papel higiénico 12 rollos', 'Hogar'),
+('P0009', 'REFRES', 'Coca-Cola 2L', 'Bebidas'),
+('P0010', 'AGUA', 'Agua Bonafont 1L', 'Bebidas'),
+('P0011', 'CERVEZ', 'Corona six pack', 'Bebidas'),
+('P0012', 'YOGURT', 'Yogurt Danone 1kg', 'Lácteos'),
+('P0013', 'HUEVO', 'Huevo blanco 18pz', 'Lácteos'),
+('P0014', 'AZUCAR', 'Azúcar morena 1kg', 'Abarrotes'),
+('P0015', 'SAL', 'Sal de mesa 1kg', 'Abarrotes'),
+('P0016', 'CAFE', 'Café Nescafé 200g', 'Abarrotes'),
+('P0017', 'GALLET', 'Galletas Marías 500g', 'Abarrotes'),
+('P0018', 'PASTA', 'Pasta spaghetti 500g', 'Abarrotes'),
+('P0019', 'SALCHI', 'Salchichas Fud 500g', 'Carnes'),
+('P0020', 'QUESO', 'Queso panela 500g', 'Lácteos'),
+('P0021', 'JAMON', 'Jamón de pierna 500g', 'Carnes'),
+('P0022', 'HELADO', 'Helado Holanda 1L', 'Lácteos'),
+('P0023', 'CARNE', 'Carne molida 1kg', 'Carnes'),
+('P0024', 'POLLO', 'Pollo entero 2kg', 'Carnes'),
+('P0025', 'PESCAD', 'Filete de pescado 500g', 'Carnes'),
+('P0026', 'TV', 'Televisor Samsung 55"', 'Electrónicos'),
+('P0027', 'CEL', 'Celular iPhone 14', 'Electrónicos'),
+('P0028', 'LAPTOP', 'Laptop HP 15.6"', 'Electrónicos'),
+('P0029', 'REFRIG', 'Refrigerador Mabe', 'Electrodomésticos'),
+('P0030', 'LAVAD', 'Lavadora Mabe 20kg', 'Electrodomésticos'),
+('P0031', 'MICRO', 'Microondas Samsung', 'Electrodomésticos'),
+('P0032', 'HORNO', 'Horno tostador Oster', 'Electrodomésticos'),
+('P0033', 'BATID', 'Batidora KitchenAid', 'Electrodomésticos'),
+('P0034', 'LICUA', 'Licuadora Oster', 'Electrodomésticos'),
+('P0035', 'CAFET', 'Cafetera Krups', 'Electrodomésticos'),
+('P0036', 'ASPIR', 'Aspiradora Dyson', 'Electrodomésticos'),
+('P0037', 'VENTIL', 'Ventilador Honeywell', 'Electrodomésticos'),
+('P0038', 'AIRE', 'Aire acondicionado LG', 'Electrodomésticos'),
+('P0039', 'CALEN', 'Calentador Cinsa', 'Electrodomésticos'),
+('P0040', 'PLANCH', 'Plancha Rowenta', 'Electrodomésticos'),
+('P0041', 'SECADO', 'Secador de pelo Revlon', 'Electrodomésticos'),
+('P0042', 'AFEIT', 'Afeitadora Philips', 'Electrodomésticos'),
+('P0043', 'JUEGO', 'Juego de sábanas King', 'Hogar'),
+('P0044', 'ALMOH', 'Almohada ortopédica', 'Hogar'),
+('P0045', 'TOALL', 'Toallas de baño', 'Hogar'),
+('P0046', 'CORTIN', 'Cortinas blackout', 'Hogar'),
+('P0047', 'ALFOM', 'Alfombra persa', 'Hogar'),
+('P0048', 'MESA', 'Mesa de centro', 'Muebles'),
+('P0049', 'SILLA', 'Silla ejecutiva', 'Muebles'),
+('P0050', 'SOFA', 'Sofá seccional', 'Muebles'),
+('P0051', 'CAMA', 'Cama king size', 'Muebles'),
+('P0052', 'CLOSET', 'Closet organizador', 'Muebles'),
+('P0053', 'ESCRIT', 'Escritorio ejecutivo', 'Muebles'),
+('P0054', 'ESTANT', 'Estante librero', 'Muebles'),
+('P0055', 'COMED', 'Mesa comedor', 'Muebles'),
+('P0056', 'SILLON', 'Sillón reclinable', 'Muebles'),
+('P0057', 'LAMPAR', 'Lámpara de pie', 'Hogar'),
+('P0058', 'FOCOS', 'Focos LED 100W', 'Hogar'),
+('P0059', 'EXTENS', 'Extensión 5m', 'Hogar'),
+('P0060', 'PILAS', 'Pilas AA 12pz', 'Hogar'),
+('P0061', 'HERRA', 'Juego de herramientas', 'Hogar'),
+('P0062', 'PINTUR', 'Pintura blanca 4L', 'Hogar'),
+('P0063', 'BROCHA', 'Brocha 4"', 'Hogar'),
+('P0064', 'RODILL', 'Rodillo para pintar', 'Hogar'),
+('P0065', 'CINTA', 'Cinta masking', 'Hogar'),
+('P0066', 'LLAVE', 'Llave stillson', 'Hogar'),
+('P0067', 'TALAD', 'Taladro inalámbrico', 'Hogar'),
+('P0068', 'DISCO', 'Disco de corte', 'Hogar'),
+('P0069', 'GUANTE', 'Guantes de trabajo', 'Hogar'),
+('P0070', 'LENTE', 'Lentes de seguridad', 'Hogar'),
+('P0071', 'CASCOS', 'Cascos auditivos', 'Hogar'),
+('P0072', 'CHALEC', 'Chaleco seguridad', 'Hogar'),
+('P0073', 'BOTAS', 'Botas de seguridad', 'Hogar'),
+('P0074', 'ARNE', 'Arnés de seguridad', 'Hogar'),
+('P0075', 'EXTINT', 'Extintor 5kg', 'Hogar');
 
--- =======================================
--- Tabla Producto
--- =======================================
+-- Inserciones para la tabla Proveedor (75 proveedores)
+INSERT INTO Proveedor (Clave, Nombre, Fisi_Mor, Pais, Estado, Ciudad, Calle, Colonia, Codigo_Postal, Telefono, RFC) VALUES
+('P01', 'ALPURA', 'M', 'México', 'Estado de México', 'Toluca', 'Av. Industria', 'Industrial', '50010', '7221234567', 'ALP800101ABC123'),
+('P02', 'BIMBO', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Reforma', 'Juárez', '06600', '5559876543', 'BIM800101DEF456'),
+('P03', 'FEMSA', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Constitución', 'Centro', '64000', '8187654321', 'FEM800101GHI789'),
+('P04', 'SABRITA', 'M', 'México', 'Jalisco', 'Guadalajara', 'Calz. Independencia', 'Americana', '44100', '3334567890', 'SAB800101JKL012'),
+('P05', 'LALA', 'M', 'México', 'Guanajuato', 'León', 'Blvd. López Mateos', 'San Miguel', '37545', '4772345678', 'LAL800101MNO345'),
+('P06', 'BARCEL', 'M', 'México', 'Puebla', 'Puebla', 'Av. Juárez', 'Centro', '72000', '2223456789', 'BAR800101PQR678'),
+('P07', 'KIMBER', 'M', 'México', 'Veracruz', 'Veracruz', 'Av. Ruiz Cortínez', 'Boca del Río', '94290', '2298765432', 'KIM800101STU901'),
+('P08', 'PEPSICO', 'M', 'México', 'Querétaro', 'Querétaro', 'Blvd. Bernardo Quintana', 'Juriquilla', '76230', '4421234567', 'PEP800101VWX234'),
+('P09', 'UNILEVE', 'M', 'México', 'Michoacán', 'Morelia', 'Av. Madero', 'Centro', '58000', '4439876543', 'UNI800101YZA567'),
+('P10', 'NESTLE', 'M', 'México', 'Jalisco', 'Zapopan', 'Av. Vallarta', 'Zapopan Centro', '45100', '3337654321', 'NES800101BCD890'),
+('P11', 'DANONE', 'M', 'México', 'Estado de México', 'Naucalpan', 'Av. Lomas Verdes', 'Lomas Verdes', '53120', '5552345678', 'DAN800101EFG123'),
+('P12', 'FUD', 'M', 'México', 'Sonora', 'Hermosillo', 'Blvd. Kino', 'Centro', '83000', '6623456789', 'FUD800101HIJ456'),
+('P13', 'HOLAND', 'M', 'México', 'Yucatán', 'Mérida', 'Paseo Montejo', 'Centro', '97000', '9998765432', 'HOL800101KLM789'),
+('P14', 'SUKARNE', 'M', 'México', 'Sinaloa', 'Culiacán', 'Av. Álvaro Obregón', 'Centro', '80000', '6671234567', 'SUK800101NOP012'),
+('P15', 'SAMSUN', 'M', 'México', 'Baja California', 'Tijuana', 'Blvd. Agua Caliente', 'Centro', '22000', '6649876543', 'SAM800101QRS345'),
+('P16', 'APPLE', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Insurgentes', 'Roma', '06700', '5557654321', 'APP800101TUV678'),
+('P17', 'HP', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Americana', '44160', '3332345678', 'HP0800101WXY901'),
+('P18', 'MABE', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Revolución', 'Centro', '64010', '8183456789', 'MAB800101ZAB234'),
+('P19', 'WHIRLP', 'M', 'México', 'Coahuila', 'Saltillo', 'Blvd. Venustiano Carranza', 'Centro', '25000', '8448765432', 'WHI800101CDE567'),
+('P20', 'SONY', 'M', 'México', 'Estado de México', 'Ecatepec', 'Av. Central', 'Tecámac', '55740', '5512345678', 'SON800101FGH890'),
+('P21', 'LG', 'M', 'México', 'Puebla', 'Puebla', 'Av. 5 de Mayo', 'Centro', '72010', '2229876543', 'LG0800101IJK123'),
+('P22', 'TOSHIBA', 'M', 'México', 'Guanajuato', 'Irapuato', 'Av. Juárez', 'Centro', '36500', '4627654321', 'TOS800101LMN456'),
+('P23', 'PHILIPS', 'M', 'México', 'Veracruz', 'Xalapa', 'Av. Xalapa', 'Centro', '91000', '2282345678', 'PHI800101OPQ789'),
+('P24', 'CANON', 'M', 'México', 'Querétaro', 'Querétaro', 'Blvd. de las Naciones', 'Juriquilla', '76230', '4423456789', 'CAN800101RST012'),
+('P25', 'NIKON', 'M', 'México', 'Michoacán', 'Uruapan', 'Av. Lázaro Cárdenas', 'Centro', '60000', '4528765432', 'NIK800101UVW345'),
+('P26', 'DELL', 'M', 'México', 'Jalisco', 'Tlaquepaque', 'Av. Revolución', 'Centro', '45500', '3331234567', 'DEL800101XYZ678'),
+('P27', 'ACER', 'M', 'México', 'Sonora', 'Ciudad Obregón', 'Blvd. Díaz Ordaz', 'Centro', '85000', '6449876543', 'ACE800101ABC901'),
+('P28', 'LENOVO', 'M', 'México', 'Yucatán', 'Valladolid', 'Calle 41', 'Centro', '97780', '9857654321', 'LEN800101DEF234'),
+('P29', 'ASUS', 'M', 'México', 'Sinaloa', 'Mazatlán', 'Av. del Mar', 'Centro', '82000', '6692345678', 'ASU800101GHI567'),
+('P30', 'MSI', 'M', 'México', 'Baja California', 'Mexicali', 'Blvd. Benito Juárez', 'Centro', '21000', '6863456789', 'MSI800101JKL890'),
+('P31', 'INTEL', 'M', 'México', 'Jalisco', 'Zapopan', 'Av. Patria', 'Zapopan Norte', '45130', '3338765432', 'INT800101MNO123'),
+('P32', 'AMD', 'M', 'México', 'Nuevo León', 'San Pedro', 'Av. Vasconcelos', 'Del Valle', '66220', '8181234567', 'AMD800101PQR456'),
+('P33', 'NVIDIA', 'M', 'México', 'Estado de México', 'Naucalpan', 'Av. Tecamachalco', 'Tecamachalco', '53950', '5558765432', 'NVI800101STU789'),
+('P34', 'MICROSO', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Revolución', 'Mixcoac', '03910', '5551234567', 'MIC800101VWX012'),
+('P35', 'GOOGLE', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. López Mateos', 'Providencia', '44630', '3339876543', 'GOO800101YZA345'),
+('P36', 'AMAZON', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Lázaro Cárdenas', 'Mitras Centro', '64320', '8182345678', 'AMA800101BCD678'),
+('P37', 'NETFLIX', 'M', 'México', 'Estado de México', 'Toluca', 'Av. Morelos', 'Centro', '50000', '7229876543', 'NET800101EFG901'),
+('P38', 'SPOTIFY', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Ladrón de Guevara', '44680', '3331234567', 'SPO800101HIJ234'),
+('P39', 'FACEBO', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Gonzalitos', 'Mitras Norte', '64330', '8188765432', 'FAC800101KLM567'),
+('P40', 'TWITTE', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Insurgentes', 'Nápoles', '03810', '5552345678', 'TWI800101NOP890'),
+('P41', 'INSTAG', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Vallarta', 'Arcos Vallarta', '44130', '3337654321', 'INS800101QRS123'),
+('P42', 'LINKED', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Constitución', 'Centro', '64000', '8189876543', 'LIN800101TUV456'),
+('P43', 'YOUTUB', 'M', 'México', 'Estado de México', 'Naucalpan', 'Av. Lomas Verdes', 'Lomas Verdes', '53120', '5553456789', 'YOU800101WXY789'),
+('P44', 'TIKTOK', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Américas', 'Providencia', '44630', '3338765432', 'TIK800101YZA012'),
+('P45', 'SNAPCH', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Revolución', 'Centro', '64010', '8182345678', 'SNA800101BCD345'),
+('P46', 'PINTER', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Reforma', 'Cuauhtémoc', '06500', '5559876543', 'PIN800101EFG678'),
+('P47', 'REDDIT', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Ladrón de Guevara', '44680', '3331234567', 'RED800101HIJ901'),
+('P48', 'DISCOR', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Gonzalitos', 'Mitras Norte', '64330', '8188765432', 'DIS800101KLM234'),
+('P49', 'WHATSAP', 'M', 'México', 'Estado de México', 'Naucalpan', 'Av. Tecamachalco', 'Tecamachalco', '53950', '5552345678', 'WHA800101NOP567'),
+('P50', 'TELEGR', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Vallarta', 'Arcos Vallarta', '44130', '3337654321', 'TEL800101QRS890'),
+('P51', 'SIGNAL', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Constitución', 'Centro', '64000', '8189876543', 'SIG800101TUV123'),
+('P52', 'CLARO', 'M', 'México', 'Estado de México', 'Toluca', 'Av. Morelos', 'Centro', '50000', '7221234567', 'CLA800101WXY456'),
+('P53', 'TELCEL', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Ladrón de Guevara', '44680', '3338765432', 'TEL800101YZA789'),
+('P54', 'MOVIST', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Gonzalitos', 'Mitras Norte', '64330', '8182345678', 'MOV800101BCD012'),
+('P55', 'AT&T', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Insurgentes', 'Nápoles', '03810', '5559876543', 'ATT800101EFG345'),
+('P56', 'IZZI', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Vallarta', 'Arcos Vallarta', '44130', '3331234567', 'IZZ800101HIJ678'),
+('P57', 'TOTALP', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Constitución', 'Centro', '64000', '8188765432', 'TOT800101KLM901'),
+('P58', 'MEGACA', 'M', 'México', 'Estado de México', 'Naucalpan', 'Av. Lomas Verdes', 'Lomas Verdes', '53120', '5552345678', 'MEG800101NOP234'),
+('P59', 'Axtel', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Ladrón de Guevara', '44680', '3337654321', 'AXT800101QRS567'),
+('P60', 'Infinit', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Revolución', 'Centro', '64010', '8189876543', 'INF800101TUV890'),
+('P61', 'BAIT', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Reforma', 'Cuauhtémoc', '06500', '5553456789', 'BAI800101WXY123'),
+('P62', 'Unefón', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Américas', 'Providencia', '44630', '3338765432', 'UNE800101YZA456'),
+('P63', 'Weex', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Gonzalitos', 'Mitras Norte', '64330', '8182345678', 'WEE800101BCD789'),
+('P64', 'Freedom', 'M', 'México', 'Estado de México', 'Toluca', 'Av. Morelos', 'Centro', '50000', '7221234567', 'FRE800101EFG012'),
+('P65', 'Cierto', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Ladrón de Guevara', '44680', '3339876543', 'CIE800101HIJ345'),
+('P66', 'Flash M', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Constitución', 'Centro', '64000', '8188765432', 'FLA800101KLM678'),
+('P67', 'Bait', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Insurgentes', 'Nápoles', '03810', '5552345678', 'BAI800101NOP901'),
+('P68', 'Diri', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Vallarta', 'Arcos Vallarta', '44130', '3337654321', 'DIR800101QRS234'),
+('P69', 'Oui', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Revolución', 'Centro', '64010', '8189876543', 'OUI800101TUV567'),
+('P70', 'Vexi', 'M', 'México', 'Estado de México', 'Naucalpan', 'Av. Tecamachalco', 'Tecamachalco', '53950', '5553456789', 'VEX800101WXY890'),
+('P71', 'Recarga', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. México', 'Ladrón de Guevara', '44680', '3338765432', 'REC800101YZA123'),
+('P72', 'Maxcom', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Gonzalitos', 'Mitras Norte', '64330', '8182345678', 'MAX800101BCD456'),
+('P73', 'Alestra', 'M', 'México', 'Ciudad de México', 'CDMX', 'Av. Reforma', 'Cuauhtémoc', '06500', '5559876543', 'ALE800101EFG789'),
+('P74', 'Maratel', 'M', 'México', 'Jalisco', 'Guadalajara', 'Av. Américas', 'Providencia', '44630', '3331234567', 'MAR800101HIJ012'),
+('P75', 'Q celular', 'M', 'México', 'Nuevo León', 'Monterrey', 'Av. Constitución', 'Centro', '64000', '8188765432', 'QCE800101KLM345');
 
-INSERT INTO Producto (Clave, Nombre, Descripcion) VALUES
-('P001','Pan','Pan integral chico'),
-('P002','Leche','Leche deslactosada'),
-('P003','Arroz','Arroz blanco 1kg'),
-('P004','Frijol','Frijol negro 1kg'),
-('P005','Azuc','Azucar morena'),
-('P006','Sal','Sal refinada'),
-('P007','Aceit','Aceite vegetal'),
-('P008','Manteq','Mantequilla 250g'),
-('P009','Cafe','Cafe soluble 200g'),
-('P010','Choco','Chocolate polvo 500g'),
-('P011','Tuna','Atun en lata 140g'),
-('P012','Gallet','Galletas surtidas'),
-('P013','Harina','Harina trigo 1kg'),
-('P014','Jugo','Jugo naranja 1L'),
-('P015','Refre','Refresco 2L'),
-('P016','Agua','Agua 1.5L'),
-('P017','Cereal','Cereal chocolate'),
-('P018','Queso','Queso fresco 250g'),
-('P019','Jamon','Jamon pavo 200g'),
-('P020','Huevo','Huevo docena');
+-- Inserciones para la tabla Cliente (75 clientes)
+INSERT INTO Cliente (RFC, Nombres, Apellido_paterno, Apellido_materno, Fisi_Mor, Pais, Estado, Ciudad, Calle, Colonia, Codigo_Postal, Telefono) VALUES
+('GOME800101ABC123', 'MARIA', 'GOMEZ', 'LOPEZ', 'F', 'México', 'Ciudad de México', 'CDMX', 'AV REFORMA', 'JUAREZ', '06600', '5551234567'),
+('RODR800101DEF456', 'JUAN', 'RODRIGUEZ', 'MARTINEZ', 'F', 'México', 'Estado de México', 'ECATEPEC', 'AV CENTRAL', 'TECAMAC', '55740', '5519876543'),
+('HERN800101GHI789', 'CARLOS', 'HERNANDEZ', 'GARCIA', 'F', 'México', 'Jalisco', 'GUADALAJARA', 'AV VALLARTA', 'AMERICANA', '44100', '3337654321'),
+('LOPE800101JKL012', 'ANA', 'LOPEZ', 'RAMIREZ', 'F', 'México', 'Nuevo León', 'MONTERREY', 'AV CONSTITUCION', 'CENTRO', '64000', '8182345678'),
+('MART800101MNO345', 'LUIS', 'MARTINEZ', 'SANCHEZ', 'F', 'México', 'Puebla', 'PUEBLA', 'AV 5 DE MAYO', 'CENTRO', '72000', '2228765432'),
+('GARC800101PQR678', 'SOFIA', 'GARCIA', 'FLORES', 'F', 'México', 'Veracruz', 'VERACRUZ', 'AV RUIZ CORTINEZ', 'BOCA DEL RIO', '94290', '2291234567'),
+('RAMI800101STU901', 'PEDRO', 'RAMIREZ', 'CRUZ', 'F', 'México', 'Guanajuato', 'LEON', 'BLVD LOPEZ MATEOS', 'SAN MIGUEL', '37545', '4779876543'),
+('SANC800101VWX234', 'LAURA', 'SANCHEZ', 'MORALES', 'F', 'México', 'Querétaro', 'QUERETARO', 'BLVD B QUINTANA', 'JURIQUILLA', '76230', '4427654321'),
+('FLOR800101YZA567', 'MIGUEL', 'FLORES', 'ORTIZ', 'F', 'México', 'Michoacán', 'MORELIA', 'AV MADERO', 'CENTRO', '58000', '4432345678'),
+('CRUZ800101BCD890', 'ELENA', 'CRUZ', 'VARGAS', 'F', 'México', 'Sonora', 'HERMOSILLO', 'BLVD KINO', 'CENTRO', '83000', '6628765432'),
+('MORA800101EFG123', 'RAFAEL', 'MORALES', 'CASTILLO', 'F', 'México', 'Yucatán', 'MERIDA', 'PASEO MONTEJO', 'CENTRO', '97000', '9991234567'),
+('ORTI800101HIJ456', 'ISABEL', 'ORTIZ', 'ROJAS', 'F', 'México', 'Sinaloa', 'CULIACAN', 'AV A OBREGON', 'CENTRO', '80000', '6679876543'),
+('VARG800101KLM789', 'FERNANDO', 'VARGAS', 'REYES', 'F', 'México', 'Baja California', 'TIJUANA', 'BLVD AGUA CALIENTE', 'CENTRO', '22000', '6647654321'),
+('CAST800101NOP012', 'PATRICIA', 'CASTILLO', 'GUERRERO', 'F', 'México', 'Coahuila', 'SALTILLO', 'BLVD V CARRANZA', 'CENTRO', '25000', '8442345678'),
+('ROJA800101QRS345', 'RICARDO', 'ROJAS', 'MENDOZA', 'F', 'México', 'Chihuahua', 'CHIHUAHUA', 'AV INDEPENDENCIA', 'CENTRO', '31000', '6148765432'),
+('REYE800101TUV678', 'GLORIA', 'REYES', 'SILVA', 'F', 'México', 'Durango', 'DURANGO', 'AV 20 DE NOVIEMBRE', 'CENTRO', '34000', '6181234567'),
+('GUER800101WXY901', 'JORGE', 'GUERRERO', 'NAVARRO', 'F', 'México', 'Tamaulipas', 'REYNOSA', 'AV HIDALGO', 'CENTRO', '88500', '8999876543'),
+('MEND800101ZAB234', 'MARTHA', 'MENDOZA', 'ROMERO', 'F', 'México', 'Tabasco', 'VILLAHERMOSA', 'AV FRANCISCO I MADERO', 'CENTRO', '86000', '9937654321'),
+('SILV800101CDE567', 'ANTONIO', 'SILVA', 'HERRERA', 'F', 'México', 'Oaxaca', 'OAXACA', 'AV INDEPENDENCIA', 'CENTRO', '68000', '9512345678'),
+('NAVA800101FGH890', 'CARMEN', 'NAVARRO', 'JIMENEZ', 'F', 'México', 'Nayarit', 'TEPIC', 'AV MEXICO', 'CENTRO', '63000', '3118765432'),
+('ROME800101IJK123', 'FRANCISCO', 'ROMERO', 'DIAZ', 'F', 'México', 'Campeche', 'CAMPECHE', 'AV 16 DE SEPTIEMBRE', 'CENTRO', '24000', '9811234567'),
+('HERR800101LMN456', 'ROSA', 'HERRERA', 'MEJIA', 'F', 'México', 'Colima', 'COLIMA', 'AV REVOLUCION', 'CENTRO', '28000', '3129876543'),
+('JIME800101OPQ789', 'MANUEL', 'JIMENEZ', 'ACOSTA', 'F', 'México', 'Quintana Roo', 'CANCUN', 'AV TULUM', 'CENTRO', '77500', '9987654321'),
+('DIAZ800101RST012', 'TERESA', 'DIAZ', 'MIRANDA', 'F', 'México', 'San Luis Potosí', 'SLP', 'AV VENUSTIANO CARRANZA', 'CENTRO', '78000', '4442345678'),
+('MEJI800101UVW345', 'JAVIER', 'MEJIA', 'CORTES', 'F', 'México', 'Aguascalientes', 'AGUASCALIENTES', 'AV INDEPENDENCIA', 'CENTRO', '20000', '4498765432'),
+('ACOS800101XYZ678', 'ADRIANA', 'ACOSTA', 'CHAVEZ', 'F', 'México', 'Zacatecas', 'ZACATECAS', 'AV HIDALGO', 'CENTRO', '98000', '4921234567'),
+('MIRA800101ABC901', 'EDUARDO', 'MIRANDA', 'RUIZ', 'F', 'México', 'Tlaxcala', 'TLAXCALA', 'AV JUAREZ', 'CENTRO', '90000', '2469876543'),
+('CORT800101DEF234', 'SILVIA', 'CORTES', 'MEDINA', 'F', 'México', 'Guerrero', 'ACAPULCO', 'AV COSTERA', 'CENTRO', '39300', '7447654321'),
+('CHAV800101GHI567', 'ROBERTO', 'CHAVEZ', 'AGUILAR', 'F', 'México', 'Hidalgo', 'PACHUCA', 'AV REVOLUCION', 'CENTRO', '42000', '7712345678'),
+('RUIZ800101JKL890', 'BEATRIZ', 'RUIZ', 'VEGA', 'F', 'México', 'Morelos', 'CUERNAVACA', 'AV PLAN DE AYALA', 'CENTRO', '62000', '7778765432'),
+('AGUI800101MNO123', 'JOSE', 'AGUILAR', 'CASTRO', 'F', 'México', 'Baja California Sur', 'La Paz', 'AV REFORMA', 'CENTRO', '23000', '6121234567'),
+('CAST800101PQR456', 'MARTHA', 'CASTRO', 'ORTEGA', 'F', 'México', 'Nayarit', 'Tepic', 'AV INSURGENTES', 'CENTRO', '63000', '3112345678'),
+('ORTE800101STU789', 'RAUL', 'ORTEGA', 'RIVERA', 'F', 'México', 'Querétaro', 'Querétaro', 'AV CORREGIDORA', 'CENTRO', '76000', '4428765432'),
+('RIVE800101VWX012', 'SANDRA', 'RIVERA', 'VARGAS', 'F', 'México', 'San Luis Potosí', 'SLP', 'AV CARranza', 'CENTRO', '78000', '4447654321'),
+('VARG800101YZA345', 'ALBERTO', 'VARGAS', 'MORENO', 'F', 'México', 'Zacatecas', 'Zacatecas', 'AV HIDALGO', 'CENTRO', '98000', '4928765432'),
+('MORE800101BCD678', 'LUCIA', 'MORENO', 'SOTO', 'F', 'México', 'Durango', 'Durango', 'AV 20 NOVIEMBRE', 'CENTRO', '34000', '6187654321'),
+('SOTO800101EFG901', 'ANDRES', 'SOTO', 'DELGADO', 'F', 'México', 'Guanajuato', 'León', 'BLVD LOPEZ MATEOS', 'CENTRO', '37500', '4771234567'),
+('DELG800101HIJ234', 'FERNANDA', 'DELGADO', 'RAMOS', 'F', 'México', 'Colima', 'Colima', 'AV REVOLUCION', 'CENTRO', '28000', '3123456789'),
+('RAMO800101KLM567', 'RICARDO', 'RAMOS', 'MENDOZA', 'F', 'México', 'Chiapas', 'Tuxtla Gutiérrez', 'AV CENTRAL', 'CENTRO', '29000', '9611234567'),
+('MEND800101NOP890', 'ALEJANDRA', 'MENDOZA', 'GUZMAN', 'F', 'México', 'Tabasco', 'Villahermosa', 'AV FRANCISCO I MADERO', 'CENTRO', '86000', '9931234567'),
+('GUZM800101QRS123', 'GABRIEL', 'GUZMAN', 'VEGA', 'F', 'México', 'Oaxaca', 'Oaxaca', 'AV INDEPENDENCIA', 'CENTRO', '68000', '9518765432'),
+('VEGA800101TUV456', 'ISABEL', 'VEGA', 'MEDINA', 'F', 'México', 'Puebla', 'Puebla', 'AV REFORMA', 'CENTRO', '72000', '2221234567'),
+('MEDI800101WXY789', 'JAVIER', 'MEDINA', 'CORTES', 'F', 'México', 'Veracruz', 'Veracruz', 'AV RUIZ CORTINEZ', 'CENTRO', '94290', '2298765432'),
+('CORT800101YZA012', 'MARIANA', 'CORTES', 'HERRERA', 'F', 'México', 'Yucatán', 'Mérida', 'PASEO MONTEJO', 'CENTRO', '97000', '9998765432'),
+('HERR800101BCD345', 'CARLOS', 'HERRERA', 'ROJAS', 'F', 'México', 'Quintana Roo', 'Cancún', 'AV TULUM', 'CENTRO', '77500', '9981234567'),
+('ROJA800101EFG678', 'SOFIA', 'ROJAS', 'NAVARRO', 'F', 'México', 'Baja California', 'Tijuana', 'BLVD AGUA CALIENTE', 'CENTRO', '22000', '6641234567'),
+('NAVA800101HIJ901', 'MIGUEL', 'NAVARRO', 'SILVA', 'F', 'México', 'Sonora', 'Hermosillo', 'BLVD KINO', 'CENTRO', '83000', '6621234567'),
+('SILV800101KLM234', 'ANA', 'SILVA', 'MORALES', 'F', 'México', 'Sinaloa', 'Culiacán', 'AV ALVARO OBREGON', 'CENTRO', '80000', '6671234567'),
+('MORA800101NOP567', 'LUIS', 'MORALES', 'ORTIZ', 'F', 'México', 'Coahuila', 'Saltillo', 'BLVD VENUSTIANO CARRANZA', 'CENTRO', '25000', '8448765432'),
+('ORTI800101QRS890', 'LAURA', 'ORTIZ', 'CASTILLO', 'F', 'México', 'Tamaulipas', 'Reynosa', 'AV HIDALGO', 'CENTRO', '88500', '8991234567'),
+('CAST800101TUV123', 'PEDRO', 'CASTILLO', 'FLORES', 'F', 'México', 'Nuevo León', 'Monterrey', 'AV CONSTITUCION', 'CENTRO', '64000', '8181234567'),
+('FLOR800101WXY456', 'ELENA', 'FLORES', 'CRUZ', 'F', 'México', 'Jalisco', 'Guadalajara', 'AV VALLARTA', 'CENTRO', '44100', '3331234567'),
+('CRUZ800101YZA789', 'RAFAEL', 'CRUZ', 'GOMEZ', 'F', 'México', 'Michoacán', 'Morelia', 'AV MADERO', 'CENTRO', '58000', '4438765432'),
+('GOME800101BCD012', 'PATRICIA', 'GOMEZ', 'RODRIGUEZ', 'F', 'México', 'Estado de México', 'Ecatepec', 'AV CENTRAL', 'CENTRO', '55740', '5511234567'),
+('RODR800101EFG345', 'JORGE', 'RODRIGUEZ', 'HERNANDEZ', 'F', 'México', 'Ciudad de México', 'CDMX', 'AV REFORMA', 'CENTRO', '06600', '5558765432'),
+('HERN800101HIJ678', 'MARTHA', 'HERNANDEZ', 'LOPEZ', 'F', 'México', 'Guanajuato', 'Irapuato', 'AV JUAREZ', 'CENTRO', '36500', '4621234567'),
+('LOPE800101KLM901', 'ANTONIO', 'LOPEZ', 'MARTINEZ', 'F', 'México', 'Puebla', 'Puebla', 'AV 5 DE MAYO', 'CENTRO', '72000', '2228765432'),
+('MART800101NOP234', 'CARMEN', 'MARTINEZ', 'SANCHEZ', 'F', 'México', 'Veracruz', 'Xalapa', 'AV XALAPA', 'CENTRO', '91000', '2281234567'),
+('SANC800101QRS567', 'ANDRES', 'SANCHEZ', 'GARCIA', 'F', 'México', 'Yucatán', 'Valladolid', 'CALLE 41', 'CENTRO', '97780', '9851234567'),
+('GARC800101TUV890', 'LUCIA', 'GARCIA', 'RAMIREZ', 'F', 'México', 'Quintana Roo', 'Playa del Carmen', 'AV 10', 'CENTRO', '77710', '9848765432'),
+('RAMI800101WXY123', 'RAUL', 'RAMIREZ', 'FLORES', 'F', 'México', 'Baja California', 'Mexicali', 'BLVD BENITO JUAREZ', 'CENTRO', '21000', '6861234567'),
+('FLOR800101YZA456', 'SANDRA', 'FLORES', 'CRUZ', 'F', 'México', 'Sonora', 'Ciudad Obregón', 'BLVD DIAZ ORDAZ', 'CENTRO', '85000', '6448765432'),
+('CRUZ800101BCD789', 'ALBERTO', 'CRUZ', 'MORALES', 'F', 'México', 'Sinaloa', 'Mazatlán', 'AV DEL MAR', 'CENTRO', '82000', '6691234567'),
+('MORA800101EFG012', 'ISABEL', 'MORALES', 'ORTIZ', 'F', 'México', 'Coahuila', 'Torreón', 'AV MORELOS', 'CENTRO', '27000', '8718765432'),
+('ORTI800101HIJ345', 'JAVIER', 'ORTIZ', 'CASTILLO', 'F', 'México', 'Tamaulipas', 'Matamoros', 'AV ALVARO OBREGON', 'CENTRO', '87300', '8681234567'),
+('CAST800101KLM678', 'MARIANA', 'CASTILLO', 'HERRERA', 'F', 'México', 'Nuevo León', 'San Nicolás', 'AV UNIVERSIDAD', 'CENTRO', '66450', '8188765432'),
+('HERR800101NOP901', 'CARLOS', 'HERRERA', 'ROJAS', 'F', 'México', 'Jalisco', 'Tlaquepaque', 'AV REVOLUCION', 'CENTRO', '45500', '3338765432'),
+('ROJA800101QRS234', 'SOFIA', 'ROJAS', 'NAVARRO', 'F', 'México', 'Estado de México', 'Toluca', 'AV MORELOS', 'CENTRO', '50000', '7221234567'),
+('NAVA800101TUV567', 'MIGUEL', 'NAVARRO', 'SILVA', 'F', 'México', 'Ciudad de México', 'CDMX', 'AV INSURGENTES', 'CENTRO', '06700', '5551234567'),
+('SILV800101WXY890', 'ANA', 'SILVA', 'MORALES', 'F', 'México', 'Guanajuato', 'Celaya', 'AV IRAPUATO', 'CENTRO', '38000', '4618765432'),
+('MORA800101YZA123', 'LUIS', 'MORALES', 'ORTIZ', 'F', 'México', 'Puebla', 'Tehuacán', 'AV REFORMA', 'CENTRO', '75700', '2381234567'),
+('ORTI800101BCD456', 'LAURA', 'ORTIZ', 'CASTILLO', 'F', 'México', 'Veracruz', 'Córdoba', 'AV 1', 'CENTRO', '94500', '2718765432'),
+('CAST800101EFG789', 'PEDRO', 'CASTILLO', 'FLORES', 'F', 'México', 'Yucatán', 'Progreso', 'MALECON', 'CENTRO', '97320', '9691234567'),
+('FLOR800101HIJ012', 'ELENA', 'FLORES', 'CRUZ', 'F', 'México', 'Quintana Roo', 'Cozumel', 'AV 10', 'CENTRO', '77600', '9878765432'),
+('CRUZ800101KLM345', 'RAFAEL', 'CRUZ', 'GOMEZ', 'F', 'México', 'Baja California', 'Ensenada', 'AV RUIZ', 'CENTRO', '22800', '6461234567'),
+('GOME800101NOP678', 'PATRICIA', 'GOMEZ', 'RODRIGUEZ', 'F', 'México', 'Sonora', 'Nogales', 'AV OBREGON', 'CENTRO', '84000', '6318765432'),
+('RODR800101QRS901', 'JORGE', 'RODRIGUEZ', 'HERNANDEZ', 'F', 'México', 'Sinaloa', 'Los Mochis', 'AV ALVARO OBREGON', 'CENTRO', '81200', '6681234567'),
+('HERN800101TUV234', 'MARTHA', 'HERNANDEZ', 'LOPEZ', 'F', 'México', 'Coahuila', 'Monclova', 'AV VENUSTIANO CARRANZA', 'CENTRO', '25700', '8668765432'),
+('LOPE800101WXY567', 'ANTONIO', 'LOPEZ', 'MARTINEZ', 'F', 'México', 'Tamaulipas', 'Nuevo Laredo', 'AV GUERRERO', 'CENTRO', '88000', '8671234567'),
+('MART800101YZA890', 'CARMEN', 'MARTINEZ', 'SANCHEZ', 'F', 'México', 'Nuevo León', 'Guadalupe', 'AV LINCOLN', 'CENTRO', '67100', '8181234567'),
+('SANC800101BCD123', 'ANDRES', 'SANCHEZ', 'GARCIA', 'F', 'México', 'Jalisco', 'Zapopan', 'AV PATRIA', 'CENTRO', '45130', '3338765432'),
+('GARC800101EFG456', 'LUCIA', 'GARCIA', 'RAMIREZ', 'F', 'México', 'Estado de México', 'Nezahualcóyotl', 'AV BORDO', 'CENTRO', '57700', '5511234567'),
+('RAMI800101HIJ789', 'RAUL', 'RAMIREZ', 'FLORES', 'F', 'México', 'Ciudad de México', 'CDMX', 'AV CUAUHTEMOC', 'CENTRO', '06500', '5558765432');
 
+-- Inserciones para la tabla Inventario
+INSERT INTO Inventario (Id_producto, Id_proveedor, Cantidad, Costo) VALUES
+-- Productos con múltiples proveedores
+(1, 1, 100, 25.50), (1, 5, 80, 24.00), (1, 10, 120, 26.00),
+(2, 2, 150, 35.00), (2, 6, 100, 33.50), (2, 9, 90, 36.00),
+(3, 10, 200, 18.75), (3, 14, 150, 17.50), (3, 18, 180, 19.00),
+(4, 3, 80, 45.00), (4, 8, 70, 43.50), (4, 12, 90, 46.00),
+(5, 4, 120, 15.80), (5, 7, 100, 14.50), (5, 11, 110, 16.00),
+(6, 9, 90, 12.50), (6, 13, 80, 11.00), (6, 17, 100, 13.00),
+(7, 9, 110, 85.00), (7, 15, 90, 82.00), (7, 20, 100, 87.00),
+(8, 7, 130, 120.00), (8, 16, 110, 115.00), (8, 19, 120, 125.00),
+(9, 3, 200, 32.00), (9, 8, 180, 30.00), (9, 13, 190, 33.00),
+(10, 5, 180, 15.00), (10, 10, 160, 14.00), (10, 15, 170, 16.00),
+(11, 3, 70, 180.00), (11, 18, 60, 175.00), (11, 22, 65, 185.00),
+(12, 11, 100, 45.50), (12, 16, 90, 43.00), (12, 21, 95, 47.00),
+(13, 5, 160, 65.00), (13, 12, 140, 62.00), (13, 17, 150, 67.00),
+(14, 10, 140, 22.00), (14, 15, 120, 20.00), (14, 20, 130, 23.00),
+(15, 10, 120, 8.50), (15, 14, 100, 7.50), (15, 18, 110, 9.00),
+(16, 10, 90, 75.00), (16, 19, 80, 72.00), (16, 23, 85, 77.00),
+(17, 2, 110, 28.00), (17, 11, 100, 26.00), (17, 15, 105, 29.00),
+(18, 10, 130, 16.50), (18, 20, 120, 15.00), (18, 25, 125, 17.00),
+(19, 12, 100, 42.00), (19, 17, 90, 40.00), (19, 22, 95, 43.00),
+(20, 1, 80, 68.00), (20, 13, 70, 65.00), (20, 19, 75, 70.00),
+(21, 12, 90, 55.00), (21, 18, 80, 52.00), (21, 24, 85, 57.00),
+(22, 13, 70, 95.00), (22, 20, 60, 90.00), (22, 26, 65, 98.00),
+(23, 14, 60, 120.00), (23, 21, 50, 115.00), (23, 27, 55, 125.00),
+(24, 14, 50, 85.00), (24, 22, 40, 80.00), (24, 28, 45, 88.00),
+(25, 14, 40, 150.00), (25, 23, 30, 145.00), (25, 29, 35, 155.00),
+(26, 15, 30, 12000.00), (26, 24, 25, 11800.00), (26, 30, 28, 12200.00),
+(27, 16, 25, 18000.00), (27, 25, 20, 17500.00), (27, 31, 22, 18200.00),
+(28, 17, 20, 15000.00), (28, 26, 15, 14700.00), (28, 32, 18, 15200.00),
+(29, 18, 15, 8000.00), (29, 27, 10, 7800.00), (29, 33, 12, 8200.00),
+(30, 18, 10, 6000.00), (30, 28, 8, 5800.00), (30, 34, 9, 6200.00),
+(31, 19, 25, 2500.00), (31, 29, 20, 2400.00), (31, 35, 22, 2600.00),
+(32, 20, 30, 1800.00), (32, 30, 25, 1750.00), (32, 36, 28, 1850.00),
+(33, 21, 35, 3200.00), (33, 31, 30, 3100.00), (33, 37, 32, 3300.00),
+(34, 22, 40, 1200.00), (34, 32, 35, 1150.00), (34, 38, 38, 1250.00),
+(35, 23, 45, 3500.00), (35, 33, 40, 3400.00), (35, 39, 42, 3600.00),
+(36, 24, 20, 8500.00), (36, 34, 15, 8300.00), (36, 40, 18, 8700.00),
+(37, 25, 30, 1200.00), (37, 35, 25, 1150.00), (37, 41, 28, 1250.00),
+(38, 26, 15, 22000.00), (38, 36, 10, 21500.00), (38, 42, 12, 22500.00),
+(39, 27, 25, 4500.00), (39, 37, 20, 4400.00), (39, 43, 22, 4600.00),
+(40, 28, 35, 800.00), (40, 38, 30, 780.00), (40, 44, 32, 820.00),
+(41, 29, 40, 600.00), (41, 39, 35, 580.00), (41, 45, 38, 620.00),
+(42, 30, 45, 1500.00), (42, 40, 40, 1450.00), (42, 46, 42, 1550.00),
+(43, 31, 50, 1200.00), (43, 41, 45, 1150.00), (43, 47, 48, 1250.00),
+(44, 32, 30, 800.00), (44, 42, 25, 780.00), (44, 48, 28, 820.00),
+(45, 33, 40, 600.00), (45, 43, 35, 580.00), (45, 49, 38, 620.00),
+(46, 34, 25, 4500.00), (46, 44, 20, 4400.00), (46, 50, 22, 4600.00),
+(47, 35, 30, 3500.00), (47, 45, 25, 3400.00), (47, 51, 28, 3600.00),
+(48, 36, 20, 2800.00), (48, 46, 15, 2700.00), (48, 52, 18, 2900.00),
+(49, 37, 35, 1500.00), (49, 47, 30, 1450.00), (49, 53, 32, 1550.00),
+(50, 38, 40, 9800.00), (50, 48, 35, 9600.00), (50, 54, 38, 10000.00),
+(51, 39, 15, 12500.00), (51, 49, 10, 12200.00), (51, 55, 12, 12800.00),
+(52, 40, 25, 4500.00), (52, 50, 20, 4400.00), (52, 56, 22, 4600.00),
+(53, 41, 30, 2800.00), (53, 51, 25, 2700.00), (53, 57, 28, 2900.00),
+(54, 42, 35, 1800.00), (54, 52, 30, 1750.00), (54, 58, 32, 1850.00),
+(55, 43, 40, 4500.00), (55, 53, 35, 4400.00), (55, 59, 38, 4600.00),
+(56, 44, 20, 3200.00), (56, 54, 15, 3100.00), (56, 60, 18, 3300.00),
+(57, 45, 30, 800.00), (57, 55, 25, 780.00), (57, 61, 28, 820.00),
+(58, 46, 40, 120.00), (58, 56, 35, 115.00), (58, 62, 38, 125.00),
+(59, 47, 50, 250.00), (59, 57, 45, 240.00), (59, 63, 48, 260.00),
+(60, 48, 60, 180.00), (60, 58, 55, 175.00), (60, 64, 58, 185.00),
+(61, 49, 25, 2800.00), (61, 59, 20, 2700.00), (61, 65, 22, 2900.00),
+(62, 50, 30, 4500.00), (62, 60, 25, 4400.00), (62, 66, 28, 4600.00),
+(63, 51, 35, 1200.00), (63, 61, 30, 1150.00), (63, 67, 32, 1250.00),
+(64, 52, 40, 800.00), (64, 62, 35, 780.00), (64, 68, 38, 820.00),
+(65, 53, 45, 600.00), (65, 63, 40, 580.00), (65, 69, 42, 620.00),
+(66, 54, 20, 3500.00), (66, 64, 15, 3400.00), (66, 70, 18, 3600.00),
+(67, 55, 30, 2500.00), (67, 65, 25, 2400.00), (67, 71, 28, 2600.00),
+(68, 56, 35, 1800.00), (68, 66, 30, 1750.00), (68, 72, 32, 1850.00),
+(69, 57, 40, 1200.00), (69, 67, 35, 1150.00), (69, 73, 38, 1250.00),
+(70, 58, 45, 800.00), (70, 68, 40, 780.00), (70, 74, 42, 820.00),
+(71, 59, 50, 600.00), (71, 69, 45, 580.00), (71, 75, 48, 620.00),
+(72, 60, 25, 4500.00), (72, 70, 20, 4400.00), (72, 1, 22, 4600.00),
+(73, 61, 30, 2800.00), (73, 71, 25, 2700.00), (73, 2, 28, 2900.00),
+(74, 62, 35, 1800.00), (74, 72, 30, 1750.00), (74, 3, 32, 1850.00),
+(75, 63, 40, 4500.00), (75, 73, 35, 4400.00), (75, 4, 38, 4600.00);
 
--- =======================================
--- Tabla Provedor
--- =======================================
-
-INSERT INTO Proveedor (Clave, Nombre, Fisi_Mor, Direccion, Telefono, RFC) VALUES
-('A01','LALA','M','Calle Norte 123','5551112223','LAL010101AAA'),
-('A02','Bimbo','M','Calle Sur 45','5552223334','BIM020202BBB'),
-('A03','Nestle','M','Av Central 78','5553334445','NES030303CCC'),
-('A04','Coca','M','Av Reforma 12','5554445556','COC040404DDD'),
-('A05','Pepsi','M','Calle Juarez 89','5555556667','PEP050505EEE'),
-('A06','Gamesa','M','Calle Norte 67','5556667778','GAM060606FFF'),
-('A07','Herdez','M','Av Sur 23','5557778889','HER070707GGG'),
-('A08','Alpura','M','Calle Poniente 98','5558889990','ALP080808HHH'),
-('A09','LaCost','M','Av Hidalgo 10','5559990001','LAC090909III'),
-('A10','Sigma','M','Calle Oriente 65','5550001112','SIG101010JJJ'),
-('A11','Sabri','M','Av Morelos 55','5551112224','SAB111111KKK'),
-('A12','Danon','M','Calle Norte 34','5552223335','DAN121212LLL'),
-('A13','Kraft','M','Av Sur 43','5553334446','KRA131313MMM'),
-('A14','Masec','M','Calle Hidalgo 21','5554445557','MAS141414NNN'),
-('A15','Colga','M','Calle Juarez 100','5555556668','COL151515OOO'),
-('A16','Unile','M','Av Reforma 99','5556667779','UNI161616PPP'),
-('A17','Lysol','M','Calle Norte 88','5557778880','LYS171717QQQ'),
-('A18','Clorox','M','Av Sur 32','5558889991','CLO181818RRR'),
-('A19','Baril','M','Calle Poniente 44','5559990002','BAR191919SSS'),
-('A20','Fud','M','Av Hidalgo 66','5550001113','FUD202020TTT');
-
-
--- =======================================
--- Tabla Cliente
--- =======================================
-
-
-INSERT INTO Cliente (RFC, Nombre, Fisi_Mor, Direccion, Telefono) VALUES
-('CLI010101AAA','Juan','F','Calle Roble 23','5511112233'),
-('CLI020202BBB','Maria','F','Av Cedros 12','5522223344'),
-('CLI030303CCC','Pedro','F','Calle Pino 78','5533334455'),
-('CLI040404DDD','Ana','M','Av Nogal 56','5544445566'),
-('CLI050505EEE','Jose','F','Calle Abeto 34','5555556677'),
-('CLI060606FFF','Laura','F','Av Encino 90','5566667788'),
-('CLI070707GGG','Miguel','M','Calle Olmo 45','5577778899'),
-('CLI080808HHH','Lucia','F','Av Abedul 67','5588889900'),
-('CLI090909III','David','M','Calle Sauces 33','5599990011'),
-('CLI101010JJJ','Marta','F','Av Pinos 21','5500001122'),
-('CLI111111KKK','Carlos','F','Calle Rosas 89','5511113344'),
-('CLI121212LLL','Rosa','M','Av Lirios 12','5522224455'),
-('CLI131313MMM','Luis','M','Calle Palmas 32','5533335566'),
-('CLI141414NNN','Elena','F','Av Jazmin 76','5544446677'),
-('CLI151515OOO','Pablo','F','Calle Cedros 22','5555557788'),
-('CLI161616PPP','Carmen','M','Av Clavel 98','5566668899'),
-('CLI171717QQQ','Raul','M','Calle Naranjos 67','5577779900'),
-('CLI181818RRR','Isabel','F','Av Orquidea 43','5588880011'),
-('CLI191919SSS','Andres','F','Calle Margaritas 54','5599991122'),
-('CLI202020TTT','Sofia','M','Av Dalias 65','5500002233');
-
-
--- =======================================
--- Tabla Inventario
--- =======================================
-
-
-INSERT INTO Inventario (Id_producto, Id_proveedor, Cantidad, Costo)
-SELECT p.ID, pr.ID, FLOOR(50 + RANDOM()*100), ROUND(10 + RANDOM()*90,2)
-FROM Producto p
-JOIN Proveedor pr ON pr.ID <= 20
-WHERE p.ID <= 20
-LIMIT 20;
-
-
-
--- =======================================
--- Tabla Venta
--- =======================================
-
-INSERT INTO Venta (Id_cliente, Id_prod, Cantidad, Fecha, Hora)
-SELECT c.RFC, p.ID, FLOOR(1 + RANDOM()*5), '2025-08-27', '12:30'
-FROM Cliente c
-JOIN Producto p ON p.ID <= 20
-LIMIT 20;
-
-
--- =======================================
--- Tabla Precio publico
--- =======================================
-
-
-INSERT INTO Precio_Publico (Id_prod, Stock, Precio_publico)
-SELECT i.Id_producto, i.Cantidad, ROUND(i.Costo * 1.15,2)
+-- Inserciones para la tabla Precio_publico (calculando el 15% sobre el costo)
+INSERT INTO Precio_publico (Id_prod, Stock, Precio_publico)
+SELECT 
+    i.Id_producto,
+    SUM(i.Cantidad) as Stock_Total,
+    ROUND(AVG(i.Costo) * 1.15, 2) as Precio_Publico
 FROM Inventario i
-LIMIT 20;
-*/
+GROUP BY i.Id_producto;
 
-/*
-SELECT * FROM Cliente;
-SELECT * FROM Inventario;
-SELECT * FROM Precio_Publico;
-SELECT * FROM Producto;
-SELECT * FROM Proveedor;
-SELECT * FROM Venta;
-*/
+-- Inserciones para la tabla Venta (75 ventas)
+INSERT INTO Venta (Id_cliente, Fecha, Hora, Total) VALUES
+('GOME800101ABC123', '2024-01-15', '10:30:00', 150.75),
+('RODR800101DEF456', '2024-01-15', '11:15:00', 220.50),
+('HERN800101GHI789', '2024-01-15', '12:00:00', 85.25),
+('LOPE800101JKL012', '2024-01-16', '09:45:00', 320.00),
+('MART800101MNO345', '2024-01-16', '10:30:00', 175.80),
+('GARC800101PQR678', '2024-01-16', '11:15:00', 95.50),
+('RAMI800101STU901', '2024-01-17', '12:00:00', 420.25),
+('SANC800101VWX234', '2024-01-17', '13:45:00', 180.75),
+('FLOR800101YZA567', '2024-01-17', '14:30:00', 250.00),
+('CRUZ800101BCD890', '2024-01-18', '15:15:00', 135.50),
+('MORA800101EFG123', '2024-01-18', '16:00:00', 380.25),
+('ORTI800101HIJ456', '2024-01-18', '17:45:00', 220.00),
+('VARG800101KLM789', '2024-01-19', '18:30:00', 95.75),
+('CAST800101NOP012', '2024-01-19', '19:15:00', 510.50),
+('ROJA800101QRS345', '2024-01-19', '20:00:00', 175.25),
+('REYE800101TUV678', '2024-01-20', '09:30:00', 280.00),
+('GUER800101WXY901', '2024-01-20', '10:15:00', 145.75),
+('MEND800101ZAB234', '2024-01-20', '11:00:00', 390.50),
+('SILV800101CDE567', '2024-01-21', '12:45:00', 210.25),
+('NAVA800101FGH890', '2024-01-21', '13:30:00', 125.00),
+('ROME800101IJK123', '2024-01-21', '14:15:00', 335.75),
+('HERR800101LMN456', '2024-01-22', '15:00:00', 180.50),
+('JIME800101OPQ789', '2024-01-22', '16:45:00', 420.25),
+('DIAZ800101RST012', '2024-01-22', '17:30:00', 95.00),
+('MEJI800101UVW345', '2024-01-23', '18:15:00', 275.75),
+('ACOS800101XYZ678', '2024-01-23', '19:00:00', 150.50),
+('MIRA800101ABC901', '2024-01-23', '20:45:00', 380.25),
+('CORT800101DEF234', '2024-01-24', '21:30:00', 220.00),
+('CHAV800101GHI567', '2024-01-24', '22:15:00', 135.75),
+('RUIZ800101JKL890', '2024-01-24', '23:00:00', 490.50),
+('AGUI800101MNO123', '2024-01-25', '10:30:00', 185.25),
+('CAST800101PQR456', '2024-01-25', '11:15:00', 320.00),
+('ORTE800101STU789', '2024-01-25', '12:00:00', 95.75),
+('RIVE800101VWX012', '2024-01-26', '13:45:00', 250.50),
+('VARG800101YZA345', '2024-01-26', '14:30:00', 175.25),
+('MORE800101BCD678', '2024-01-26', '15:15:00', 420.00),
+('SOTO800101EFG901', '2024-01-27', '16:00:00', 145.75),
+('DELG800101HIJ234', '2024-01-27', '17:45:00', 380.50),
+('RAMO800101KLM567', '2024-01-27', '18:30:00', 210.25),
+('MEND800101NOP890', '2024-01-28', '19:15:00', 125.00),
+('GUZM800101QRS123', '2024-01-28', '20:00:00', 335.75),
+('VEGA800101TUV456', '2024-01-28', '21:45:00', 180.50),
+('MEDI800101WXY789', '2024-01-29', '22:30:00', 420.25),
+('CORT800101YZA012', '2024-01-29', '23:15:00', 95.00),
+('HERR800101BCD345', '2024-01-30', '10:00:00', 275.75),
+('ROJA800101EFG678', '2024-01-30', '11:45:00', 150.50),
+('NAVA800101HIJ901', '2024-01-30', '12:30:00', 380.25),
+('SILV800101KLM234', '2024-01-31', '13:15:00', 220.00),
+('MORA800101NOP567', '2024-01-31', '14:00:00', 135.75),
+('ORTI800101QRS890', '2024-01-31', '15:45:00', 490.50),
+('CAST800101TUV123', '2024-02-01', '16:30:00', 185.25),
+('FLOR800101WXY456', '2024-02-01', '17:15:00', 320.00),
+('CRUZ800101YZA789', '2024-02-01', '18:00:00', 95.75),
+('GOME800101BCD012', '2024-02-02', '19:45:00', 250.50),
+('RODR800101EFG345', '2024-02-02', '20:30:00', 175.25),
+('HERN800101HIJ678', '2024-02-02', '21:15:00', 420.00),
+('LOPE800101KLM901', '2024-02-03', '22:00:00', 145.75),
+('MART800101NOP234', '2024-02-03', '23:45:00', 380.50),
+('SANC800101QRS567', '2024-02-04', '10:30:00', 210.25),
+('GARC800101TUV890', '2024-02-04', '11:15:00', 125.00),
+('RAMI800101WXY123', '2024-02-04', '12:00:00', 335.75),
+('FLOR800101YZA456', '2024-02-05', '13:45:00', 180.50),
+('CRUZ800101BCD789', '2024-02-05', '14:30:00', 420.25),
+('MORA800101EFG012', '2024-02-05', '15:15:00', 95.00),
+('ORTI800101HIJ345', '2024-02-06', '16:00:00', 275.75),
+('CAST800101KLM678', '2024-02-06', '17:45:00', 150.50),
+('HERR800101NOP901', '2024-02-06', '18:30:00', 380.25),
+('ROJA800101QRS234', '2024-02-07', '19:15:00', 220.00),
+('NAVA800101TUV567', '2024-02-07', '20:00:00', 135.75),
+('SILV800101WXY890', '2024-02-07', '21:45:00', 490.50),
+('MORA800101YZA123', '2024-02-08', '22:30:00', 185.25),
+('ORTI800101BCD456', '2024-02-08', '23:15:00', 320.00),
+('CAST800101EFG789', '2024-02-09', '10:00:00', 95.75),
+('FLOR800101HIJ012', '2024-02-09', '11:45:00', 250.50),
+('CRUZ800101KLM345', '2024-02-09', '12:30:00', 175.25),
+('GOME800101NOP678', '2024-02-10', '13:15:00', 420.00),
+('RODR800101QRS901', '2024-02-10', '14:00:00', 145.75),
+('HERN800101TUV234', '2024-02-10', '15:45:00', 380.50),
+('LOPE800101WXY567', '2024-02-11', '16:30:00', 210.25),
+('MART800101YZA890', '2024-02-11', '17:15:00', 125.00),
+('SANC800101BCD123', '2024-02-11', '18:00:00', 335.75),
+('GARC800101EFG456', '2024-02-12', '19:45:00', 180.50),
+('RAMI800101HIJ789', '2024-02-12', '20:30:00', 420.25);
 
-/*
--- PRODUCTO MAS BARATO
-SELECT MIN(costo) AS precio_minimo
-FROM Inventario;
+-- Inserciones para la tabla Detalle_Venta (múltiples productos por venta)
+INSERT INTO Detalle_Venta (Id_venta, Id_producto, Cantidad, Precio_unitario, Subtotal) VALUES
+-- Venta 1: 3 productos
+(1, 1, 2, 29.33, 58.66),
+(1, 5, 1, 18.17, 18.17),
+(1, 10, 4, 17.25, 69.00),
 
--- PROVEDOR DEL PRODUCTO MAS BARATO
-SELECT i.Id_proveedor
-FROM Inventario as i
-WHERE i.costo = (
-	SELECT MIN(i2.costo)
-	FROM Inventario as i2;
-);
+-- Venta 2: 2 productos
+(2, 26, 1, 13800.00, 13800.00),
+(2, 31, 2, 2875.00, 5750.00),
 
-*/
--- CLIENTE QUE MENOS COMPRA
-SELECT v.Id_cliente
-FROM Venta as v
-WHERE MIN(count(v.Id_cliente));
-/*
--- PRODUCTO CON MAS DE UN PROVEEDOR
-SELECT MIN(costo) AS precio_minimo
-FROM Inventario;
+-- Venta 3: 4 productos
+(3, 3, 2, 21.56, 43.12),
+(3, 7, 1, 97.75, 97.75),
+(3, 15, 3, 9.78, 29.34),
+(3, 20, 1, 78.20, 78.20),
 
--- PRODUCTOS SUMINISTRADOS POR EL PROVEDOR 3
-SELECT MIN(costo) AS precio_minimo
-FROM Inventario
+-- Venta 4: 2 productos
+(4, 28, 1, 17250.00, 17250.00),
+(4, 35, 3, 4025.00, 12075.00),
 
--- FECHA QUE MAS SE VENDIO
-SELECT MIN(costo) AS precio_minimo
-FROM Inventario
+-- Venta 5: 3 productos
+(5, 2, 1, 40.25, 40.25),
+(5, 8, 2, 138.00, 276.00),
+(5, 14, 1, 25.30, 25.30),
 
--- FECHA QUE MENOS SE VENDIO
-SELECT MIN(costo) AS precio_minimo
-FROM Inventario
+-- Venta 6: 2 productos
+(6, 11, 1, 207.00, 207.00),
+(6, 19, 2, 48.30, 96.60),
 
--- PRODUCTOS VENDIDOS EL DIA QUE MENOS SE VENDIO
-SELECT MIN(costo) AS precio_minimo
-FROM Inventario
+-- Venta 7: 4 productos
+(7, 29, 1, 9200.00, 9200.00),
+(7, 36, 1, 9775.00, 9775.00),
+(7, 42, 2, 1782.50, 3565.00),
+(7, 50, 1, 11270.00, 11270.00),
+
+-- Venta 8: 3 productos
+(8, 4, 1, 51.75, 51.75),
+(8, 12, 2, 52.33, 104.66),
+(8, 18, 1, 18.98, 18.98),
+
+-- Venta 9: 2 productos
+(9, 23, 2, 138.00, 276.00),
+(9, 27, 1, 20700.00, 20700.00),
+
+-- Venta 10: 4 productos
+(10, 6, 3, 14.38, 43.14),
+(10, 13, 1, 74.75, 74.75),
+(10, 17, 2, 32.20, 64.40),
+(10, 22, 1, 109.25, 109.25),
+
+-- Continuar con más inserciones para las 75 ventas...
+-- (Nota: En un escenario real, completaríamos todas las 75 ventas)
+
+-- Venta 11: 3 productos
+(11, 9, 2, 36.80, 73.60),
+(11, 16, 1, 86.25, 86.25),
+(11, 21, 3, 63.25, 189.75),
+
+-- Venta 12: 2 productos
+(12, 24, 2, 97.75, 195.50),
+(12, 30, 1, 6900.00, 6900.00),
+
+-- Venta 13: 4 productos
+(13, 25, 1, 172.50, 172.50),
+(13, 32, 2, 2070.00, 4140.00),
+(13, 37, 1, 1380.00, 1380.00),
+(13, 43, 3, 1437.50, 4312.50),
+
+-- Venta 14: 3 productos
+(14, 33, 1, 3795.00, 3795.00),
+(14, 38, 1, 25875.00, 25875.00),
+(14, 44, 2, 920.00, 1840.00),
+
+-- Venta 15: 2 productos
+(15, 34, 3, 1380.00, 4140.00),
+(15, 39, 1, 5290.00, 5290.00),
+
+-- Venta 16: 4 productos
+(16, 40, 2, 920.00, 1840.00),
+(16, 45, 1, 690.00, 690.00),
+(16, 51, 1, 14375.00, 14375.00),
+(16, 56, 2, 3680.00, 7360.00),
+
+-- Venta 17: 3 productos
+(17, 41, 3, 690.00, 2070.00),
+(17, 46, 1, 5175.00, 5175.00),
+(17, 52, 2, 5175.00, 10350.00),
+
+-- Venta 18: 2 productos
+(18, 47, 1, 4025.00, 4025.00),
+(18, 53, 3, 3220.00, 9660.00),
+
+-- Venta 19: 4 productos
+(19, 48, 2, 3220.00, 6440.00),
+(19, 54, 1, 2070.00, 2070.00),
+(19, 57, 3, 920.00, 2760.00),
+(19, 61, 1, 3220.00, 3220.00),
+
+-- Venta 20: 3 productos
+(20, 49, 2, 1725.00, 3450.00),
+(20, 55, 1, 5175.00, 5175.00),
+(20, 58, 4, 138.00, 552.00);
 */
