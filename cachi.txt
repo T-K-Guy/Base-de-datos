@@ -623,3 +623,13 @@ INSERT INTO Detalle_Venta (Id_venta, Id_producto, Cantidad, Precio_unitario, Sub
 (20, 55, 1, 5175.00, 5175.00),
 (20, 58, 4, 138.00, 552.00);
 */
+
+/*
+SELECT * FROM Producto;
+SELECT * FROM Proveddor;
+SELECT * FROM Cliente;
+SELECT * FROM Inventario;
+SELECT * FROM Venta;
+SELECT * FROM Precio_publico;
+SELECT * FROM Detalle_Venta;
+*/
