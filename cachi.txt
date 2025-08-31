@@ -633,3 +633,70 @@ SELECT * FROM Venta;
 SELECT * FROM Precio_publico;
 SELECT * FROM Detalle_Venta;
 */
+
+/*
+-- 1. El producto mas barato y todas las columnas de este
+SELECT p.*, pp.Precio_publico
+FROM Producto p
+JOIN Precio_publico pp ON p.ID = pp.Id_prod
+WHERE pp.Precio_publico = (SELECT MIN(Precio_publico) FROM Precio_publico);
+
+-- 2. El proveedor del producto mas barato
+SELECT pr.*
+FROM Proveedor pr
+JOIN Inventario i ON pr.ID = i.Id_proveedor
+JOIN Producto p ON i.Id_producto = p.ID
+JOIN Precio_publico pp ON p.ID = pp.Id_prod
+WHERE pp.Precio_publico = (SELECT MIN(Precio_publico) FROM Precio_publico)
+LIMIT 1;
+
+-- 3. Cliente que menos compra (por monto total)
+SELECT c.*, COALESCE(SUM(v.Total), 0) as Total_Compras
+FROM Cliente c
+LEFT JOIN Venta v ON c.RFC = v.Id_cliente
+GROUP BY c.RFC
+ORDER BY Total_Compras ASC
+LIMIT 1;
+
+-- 4. Producto con mas de un proveedor
+SELECT p.*, COUNT(i.Id_proveedor) as Num_Proveedores
+FROM Producto p
+JOIN Inventario i ON p.ID = i.Id_producto
+GROUP BY p.ID
+HAVING Num_Proveedores > 1
+ORDER BY Num_Proveedores DESC
+LIMIT 1;
+
+-- 5. Productos que suministra el proveedor 3
+SELECT p.*
+FROM Producto p
+JOIN Inventario i ON p.ID = i.Id_producto
+WHERE i.Id_proveedor = 3;
+
+-- 6. Fecha en la que mas ventas hubo (por cantidad de ventas)
+SELECT Fecha, COUNT(*) as Total_Ventas
+FROM Venta
+GROUP BY Fecha
+ORDER BY Total_Ventas DESC
+LIMIT 1;
+
+-- 7. Fecha en la que menos ventas hubo (por cantidad de ventas)
+SELECT Fecha, COUNT(*) as Total_Ventas
+FROM Venta
+GROUP BY Fecha
+ORDER BY Total_Ventas ASC
+LIMIT 1;
+
+-- 8. Que productos se vendieron el dia con menos ventas
+SELECT p.*, dv.Cantidad, dv.Precio_unitario, dv.Subtotal
+FROM Producto p
+JOIN Detalle_Venta dv ON p.ID = dv.Id_producto
+JOIN Venta v ON dv.Id_venta = v.ID
+WHERE v.Fecha = (
+    SELECT Fecha
+    FROM Venta
+    GROUP BY Fecha
+    ORDER BY COUNT(*) ASC
+    LIMIT 1
+);
+*/
