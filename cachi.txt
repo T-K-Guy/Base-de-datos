@@ -747,18 +747,30 @@ ORDER BY pr.Ciudad;
 -- Producto mas vendido y clientes que lo consumen
 3.- 
 
-SELECT DISTINCT pr.Codigo_Postal
-FROM Proveedor pr
-INNER JOIN Inventario i ON pr.ID = i.Id_proveedor
-INNER JOIN Detalle_Venta dv ON i.Id_producto = dv.Id_producto
-INNER JOIN (
-    SELECT dv2.Id_producto, SUM(dv2.Cantidad) as total_vendido
-    FROM Detalle_Venta dv2
-    GROUP BY dv2.Id_producto
-    ORDER BY total_vendido ASC
+WITH ProductoMaxVentas AS (
+    SELECT Id_producto, SUM(Cantidad) as TotalVendido
+    FROM Detalle_Venta
+    GROUP BY Id_producto
+    ORDER BY TotalVendido DESC
     LIMIT 1
-) AS min_ventas ON dv.Id_producto = min_ventas.Id_producto
-GROUP BY pr.Codigo_Postal, dv.Id_producto
-HAVING SUM(dv.Cantidad) = min_ventas.total_vendido;
+)
+SELECT 
+    p.*,
+    c.RFC,
+    c.Nombres,
+    c.Apellido_paterno,
+    c.Apellido_materno,
+    c.Telefono,
+    c.Ciudad,
+    SUM(dv.Cantidad) as CantidadComprada
+FROM Producto p
+CROSS JOIN ProductoMaxVentas pmv
+INNER JOIN Detalle_Venta dv ON p.ID = dv.Id_producto
+INNER JOIN Venta v ON dv.Id_venta = v.ID
+INNER JOIN Cliente c ON v.Id_cliente = c.RFC
+WHERE p.ID = pmv.Id_producto
+GROUP BY p.ID, c.RFC
+ORDER BY CantidadComprada DESC;
 */
+
 
