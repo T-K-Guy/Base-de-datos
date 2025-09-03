@@ -713,10 +713,21 @@ QUERY's
 
 -- Codigo postal del proveedor con el producto que tiene menos ventas
 1.- 
-
 SELECT DISTINCT pr.Codigo_Postal
 FROM Proveedor pr
-INNER JOIN Inventario i ON pr.ID = 
+INNER JOIN Inventario i ON pr.ID = i.Id_proveedor
+INNER JOIN (
+    SELECT dv.Id_producto
+    FROM Detalle_Venta dv
+    GROUP BY dv.Id_producto
+    HAVING SUM(dv.Cantidad) = (
+        SELECT SUM(dv2.Cantidad) as total_vendido
+        FROM Detalle_Venta dv2
+        GROUP BY dv2.Id_producto
+        ORDER BY total_vendido ASC
+        LIMIT 1
+    )
+) AS productos_min_ventas ON i.Id_producto = productos_min_ventas.Id_producto
 ORDER BY pr.Codigo_Postal;
 
 
@@ -725,22 +736,27 @@ ORDER BY pr.Codigo_Postal;
 
 SELECT DISTINCT pr.Ciudad
 FROM Proveedor pr
-WHERE pr.ID IN (
-	SELECT DISTINC i.Id_proveedor
-	FROM Inventario i
-	WHERE i.Id_producto IN (
-		SELECT DISTINCT dv.Id_producto
-		FROM Detalle_Venta dv
-		WHERE dv.Id_Venta (
-			SELECT v.ID
-			FROM Venta v
-			ORDER BY v.Total DESC
-			LIMIT 1
-		)
-	)
-)
+INNER JOIN Inventario i ON pr.ID = i.Id_proveedor
+INNER JOIN Detalle_Venta dv ON i.Id_producto = dv.Id_producto
+INNER JOIN Venta v ON dv.Id_venta = v.ID
+WHERE v.Total = (SELECT MAX(Total) FROM Venta)
 ORDER BY pr.Ciudad;
 
 
 -- Producto mas vendido y clientes que lo consumen
+3.- 
+
+SELECT DISTINCT pr.Codigo_Postal
+FROM Proveedor pr
+INNER JOIN Inventario i ON pr.ID = i.Id_proveedor
+INNER JOIN Detalle_Venta dv ON i.Id_producto = dv.Id_producto
+INNER JOIN (
+    SELECT dv2.Id_producto, SUM(dv2.Cantidad) as total_vendido
+    FROM Detalle_Venta dv2
+    GROUP BY dv2.Id_producto
+    ORDER BY total_vendido ASC
+    LIMIT 1
+) AS min_ventas ON dv.Id_producto = min_ventas.Id_producto
+GROUP BY pr.Codigo_Postal, dv.Id_producto
+HAVING SUM(dv.Cantidad) = min_ventas.total_vendido;
 */
