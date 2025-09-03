@@ -754,15 +754,7 @@ WITH ProductoMaxVentas AS (
     ORDER BY TotalVendido DESC
     LIMIT 1
 )
-SELECT 
-    p.*,
-    c.RFC,
-    c.Nombres,
-    c.Apellido_paterno,
-    c.Apellido_materno,
-    c.Telefono,
-    c.Ciudad,
-    SUM(dv.Cantidad) as CantidadComprada
+SELECT p.*,  c.*, SUM(dv.Cantidad) as CantidadComprada
 FROM Producto p
 CROSS JOIN ProductoMaxVentas pmv
 INNER JOIN Detalle_Venta dv ON p.ID = dv.Id_producto
@@ -772,5 +764,6 @@ WHERE p.ID = pmv.Id_producto
 GROUP BY p.ID, c.RFC
 ORDER BY CantidadComprada DESC;
 */
+
 
 
