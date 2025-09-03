@@ -690,17 +690,18 @@ ORDER BY Total_Ventas ASC
 LIMIT 1;
 
 -- 8. Que productos se vendieron el dia con menos ventas
-SELECT p.*, dv.Cantidad, dv.Precio_unitario, dv.Subtotal
+SELECT DISTINCT p.*
 FROM Producto p
-JOIN Detalle_Venta dv ON p.ID = dv.Id_producto
-JOIN Venta v ON dv.Id_venta = v.ID
-WHERE v.Fecha = (
+INNER JOIN Detalle_Venta dv ON p.ID = dv.Id_producto
+INNER JOIN Venta v ON dv.Id_venta = v.ID
+INNER JOIN (
     SELECT Fecha
     FROM Venta
     GROUP BY Fecha
     ORDER BY COUNT(*) ASC
     LIMIT 1
-);
+) AS min_ventas ON v.Fecha = min_ventas.Fecha
+ORDER BY p.Nombre;
 */
 
 
@@ -760,3 +761,4 @@ INNER JOIN (
 GROUP BY pr.Codigo_Postal, dv.Id_producto
 HAVING SUM(dv.Cantidad) = min_ventas.total_vendido;
 */
+
